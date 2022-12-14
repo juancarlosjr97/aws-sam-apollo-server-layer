@@ -1,0 +1,38 @@
+---
+name: Tests
+on:
+  push
+
+jobs:
+  tests:
+    name: Tests Workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node-version: [18.12.1]
+
+    steps:
+      - name: Checkout Code 🛎️
+        uses: actions/checkout@v2.4.0
+        with:
+          persist-credentials: false
+
+      - uses: aws-actions/setup-sam@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build and Start Server
+        run: npm run start:production:ci
+
+      - name: Run tests
+        run: npm run test

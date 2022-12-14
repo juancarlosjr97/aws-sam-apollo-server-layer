@@ -1,0 +1,50 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  Apollo Server Lambda with a Lambda Layer using AWS SAM
+
+Globals:
+  Function:
+    Timeout: 60
+    Layers:
+      - !Ref Layer
+    Architectures:
+      - arm64
+
+Resources:
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: local
+      Cors:
+        AllowOrigin: "'https://studio.apollographql.com'"
+        AllowHeaders: "'*'"
+        AllowCredentials: true
+  Lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: resources/lambda/build
+      Description: AWS Lambda
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Method: ANY
+            RestApiId: !Ref ApiGateway
+            Path: /graphql
+      Handler: index.handler
+      Layers:
+        - !Ref Layer
+      Runtime: nodejs18.x
+  Layer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - nodejs18.x
+      ContentUri: resources/layer/build/
+      Description: AWS Layer
+      LayerName: Layer
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: nodejs18.x
